@@ -1,0 +1,80 @@
+     }
+     if (a.getStage() == GameStage.LOBBY)
+     {
+       event.setCancelled(true);
+       return;
+     }
+     Player damager = null;
+     if ((event.getDamager() instanceof Arrow))
+     {
+       event.setDamage(200.0D);
+     }
+     else if ((event.getDamager() instanceof Player))
+     {
+       damager = (Player)event.getDamager();
+     }
+     else
+     {
+       event.setCancelled(true);
+       return;
+     }
+     if ((damager != null) && (ArenaManager.getInstance().getArena(damager) != a)) {
+       event.setCancelled(true);
+     }
+   }
+   
+   @EventHandler
+   public void onDeath(PlayerDeathEvent event)
+   {
+     final Player p = event.getEntity();
+     Arena a = ArenaManager.getInstance().getArena(p);
+     if (a != null)
+     {
+       event.setDeathMessage(null);
+       event.getDrops().clear();
+       event.setDroppedExp(0);
+       Player killer = p.getKiller();
+       if ((killer == null) || (!a.containsPlayer(killer)))
+       {
+         a.broadcast(ChatColor.GREEN + p.getName() + ChatColor.GOLD + " died!");
+         return;
+       }
+       if (a.getStage() == GameStage.INGAME)
+       {
+         a.broadcast(ChatColor.GREEN + p.getName() + ChatColor.GOLD + " was killed by " + ChatColor.GREEN + killer.getName() + ChatColor.GOLD + "!");
+         
+         a.onKill(killer, p);
+       }
+       Bukkit.getScheduler().runTaskLater(OITQ.getInstance(), new Runnable()
+       {
+         public void run()
+         {
+         }
+       }, 5L);
+     }
+   }
+   
+   @EventHandler(priority=EventPriority.HIGHEST)
+   public void onRespawn(PlayerRespawnEvent event)
+   {
+     final Player p = event.getPlayer();
+     Arena a = ArenaManager.getInstance().getArena(p);
+     if (a != null) {
+       if ((a.getStage() == GameStage.LOBBY) || (a.getRandomSpawn() == null))
+       {
+         event.setRespawnLocation(a.getLobby());
+       }
+       else
+       {
+         event.setRespawnLocation(a.getRandomSpawn());
+         Bukkit.getScheduler().runTaskLater(OITQ.getInstance(), new Runnable()
+         {
+           public void run()
+           {
+             GameUtils.equipPlayer(p);
+           }
+         }, 1L);
+       }
+     }
+   }
+ }
